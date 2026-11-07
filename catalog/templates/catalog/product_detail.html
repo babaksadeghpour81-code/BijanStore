@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+{% block title %}{{ product.name }}{% endblock %}
+
+{% block content %}
+<div class="product-detail">
+    <!-- گالری تصاویر -->
+    <div class="product-gallery">
+        {% if product.images.exists %}
+            <div class="main-image-wrap">
+                <img id="main-product-image"
+                     src="{{ product.main_image.image.url }}"
+                     alt="{{ product.main_image.alt_text|default:product.name }}">
+            </div>
+            {% if product.images.count > 1 %}
+                <div class="thumbnails">
+                    {% for img in product.images.all %}
+                        <img src="{{ img.image.url }}"
+                             alt="{{ img.alt_text|default:product.name }}"
+                             class="thumb {% if img.is_main %}active{% endif %}"
+                             data-full="{{ img.image.url }}"
+                             onclick="changeImage(this)">
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% else %}
+            <div class="img-placeholder">📦</div>
+        {% endif %}
+    </div>
+
+    <!-- اطلاعات محصول -->
+    <div class="product-info">
+        <h1>{{ product.name }}</h1>
+
+        <!-- فروشنده (لازمه حقوقی) -->
+        <div class="vendor-box">
+            <p><strong>🏪 فروشنده:</strong> {{ product.vendor.legal_name }}</p>
+            <p><span class="verified-badge">✅ هویت تأیید شده توسط BijanStore</span></p>
+        </div>
+
+        <p class="price-big">{{ product.price }} تومان</p>
+
+        {% if product.stock > 0 %}
+            <p class="stock-available">✅ موجود در انبار ({{ product.stock }} عدد)</p>
+        {% else %}
+            <p class="stock-unavailable">❌ ناموجود</p>
+        {% endif %}
+
+        {% if product.description %}
+            <div class="product-description">
+                <h3>توضیحات محصول</h3>
+                <p>{{ product.description|linebreaks }}</p>
+            </div>
+        {% endif %}
+
+        {% if product.stock > 0 %}
+            <form method="post" action="{% url 'orders:cart_add' product.id %}" class="add-to-cart-form">
+                {% csrf_token %}
+                <label for="qty">تعداد:</label>
+                <input type="number" id="qty" name="quantity" value="1" min="1" max="{{ product.stock }}">
+                <button type="submit" class="btn-add">🛒 افزودن به سبد خرید</button>
+            </form>
+        {% else %}
+            <button class="btn-disabled" disabled>ناموجود</button>
+        {% endif %}
+
+        <p class="legal-note">
+            ⚠️ این محصول توسط {{ product.vendor.legal_name }} عرضه می‌شود.
+            BijanStore تنها هویت فروشنده را تأیید کرده و مسئولیت کیفیت، گارانتی،
+            قیمت و ارسال کالا بر عهده فروشنده است. اطلاعات کامل فروشنده در فاکتور
+            و صفحه سفارش شما درج شده است.
+        </p>
+    </div>
+</div>
+
+<!-- محصولات مشابه -->
+{% if related %}
+<section class="related-section">
+    <h2>محصولات مشابه</h2>
+    <div class="product-grid">
+        {% for p in related %}
+            <div class="product-card">
+                <a href="{% url 'catalog:product_detail' p.slug %}">
+                    {% if p.main_image %}
+                        <img src="{{ p.main_image.image.url }}"
+                             alt="{{ p.main_image.alt_text|default:p.name }}"
+                             class="product-thumb">
+                    {% else %}
+                        <div class="product-img-placeholder">📦</div>
+                    {% endif %}
+                    <h3>{{ p.name }}</h3>
+                </a>
+                <p class="vendor-name">فروشنده: {{ p.vendor.name }}</p>
+                <p class="price">{{ p.price }} تومان</p>
+            </div>
+        {% endfor %}
+    </div>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}سفارش‌های من{% endblock %}
+
+{% block content %}
+<h1 class="page-title">📋 سفارش‌های من</h1>
+
+{% if not orders %}
+    <div class="empty-cart">
+        <p>هنوز سفارشی ثبت نکردی.</p>
+        <a href="{% url 'catalog:home' %}" class="btn-primary">بریم خرید</a>
+    </div>
+{% else %}
+    {% for order in orders %}
+        <div class="order-card">
+            <div class="order-header">
+                <span><strong>{{ order.order_number }}</strong></span>
+                <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span>
+            </div>
+            <p>فروشنده: {{ order.vendor.name }}</p>
+            <p>تاریخ: {{ order.created_at|date:"Y/m/d H:i" }}</p>
+            <p>مبلغ: <strong>{{ order.total }} تومان</strong></p>
+
+            <div class="order-actions">
+                <a href="{% url 'orders:order_detail' order.order_number %}" class="btn-small">جزئیات</a>
+
+                {% if order.status == 'pending' %}
+                    <a href="{% url 'orders:payment_start' order.order_number %}" class="btn-checkout" style="padding:6px 14px; font-size:11px; margin-top: -1px">
+                        💳 پرداخت
+                    </a>
+                {% endif %}
+
+                {% if order.status == 'pending' or order.status == 'cancelled' %}
+                    <form method="post" action="{% url 'orders:order_delete' order.order_number %}" style="display:inline;"
+                          onsubmit="return confirm('آیا از حذف سفارش {{ order.order_number }} مطمئنی؟ این عملیات قابل بازگشت نیست.');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-remove">🗑️ حذف</button>
+                    </form>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+{% endif %}
+{% endblock %}

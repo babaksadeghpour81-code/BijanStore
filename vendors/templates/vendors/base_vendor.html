@@ -1,0 +1,87 @@
+{% load static %}
+{% load vendor_tags %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}پنل فروشنده{% endblock %} — {{ user|get_vendor_name }}</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="vendor-body">
+
+    <!-- هدر مخصوص پنل -->
+    <header class="vendor-topbar">
+        <div class="vendor-topbar-inner">
+            <div class="vendor-brand">
+                <span class="brand-icon">🏪</span>
+                <div>
+                    <div class="brand-title">{{ user|get_vendor_name }}</div>
+                    <div class="brand-subtitle">پنل مدیریت فروشگاه</div>
+                </div>
+            </div>
+
+            <div class="vendor-user">
+                <span>👤 {{ user.get_full_name|default:user.username }}</span>
+                <a href="{% url 'notifications:list' %}" class="topbar-link notif-bell">
+                    🔔
+                    {% if unread_notifications_count > 0 %}
+                        <span class="notif-badge">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'catalog:home' %}" target="_blank" class="topbar-link">
+                    🌐 مشاهده فروشگاه
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="topbar-link logout">
+                    خروج
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <div class="vendor-panel">
+        <!-- سایدبار -->
+        <aside class="vendor-sidebar">
+            <nav>
+                <a href="{% url 'vendors:dashboard' %}"
+                   class="{% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+                    📊 داشبورد
+                </a>
+                <a href="{% url 'vendors:order_list' %}"
+                   class="{% if 'order' in request.resolver_match.url_name %}active{% endif %}">
+                    📦 سفارش‌ها
+                </a>
+                <a href="{% url 'vendors:settlements_list' %}"
+                   class="{% if request.resolver_match.url_name == 'settlements_list' %}active{% endif %}">
+                    💰 تسویه‌ها
+                </a>
+                <a href="{% url 'vendors:product_list' %}"
+                   class="{% if 'product' in request.resolver_match.url_name %}active{% endif %}">
+                    🛍️ محصولات
+                </a>
+                <a href="{% url 'vendors:coupon_list' %}"
+                   class="{% if 'coupon' in request.resolver_match.url_name %}active{% endif %}">
+                    🏷️ کدهای تخفیف
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <small>BijanStore Vendor Panel</small>
+            </div>
+        </aside>
+
+        <!-- محتوا -->
+        <section class="vendor-content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+
+            {% block vendor_content %}{% endblock %}
+        </section>
+    </div>
+
+    <script src="{% static 'js/main.js' %}"></script>
+</body>
+</html>

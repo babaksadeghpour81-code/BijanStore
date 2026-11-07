@@ -1,0 +1,50 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}محصولات{% endblock %}
+
+{% block vendor_content %}
+<div class="page-header">
+    <h1 class="page-title">محصولات</h1>
+    <a href="{% url 'vendors:product_create' %}" class="btn-primary" style="width:auto; padding:10px 20px;">
+        ➕ محصول جدید
+    </a>
+</div>
+
+{% if products %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>نام</th>
+                <th>قیمت</th>
+                <th>موجودی</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for product in products %}
+                <tr>
+                    <td>{{ product.name }}</td>
+                    <td>{{ product.price }} تومان</td>
+                    <td>{{ product.stock }}</td>
+                    <td>
+                        {% if product.is_active %}
+                            <span class="badge badge-delivered">فعال</span>
+                        {% else %}
+                            <span class="badge badge-cancelled">غیرفعال</span>
+                        {% endif %}
+                    </td>
+                    <td class="actions">
+                        <a href="{% url 'vendors:product_edit' product.pk %}" class="btn-small">ویرایش</a>
+                        <a href="{% url 'vendors:product_images' product.pk %}" class="btn-small" style="background:#17a2b8;">
+                            📸 تصاویر
+                        </a>
+                        <a href="{% url 'vendors:product_delete' product.pk %}" class="btn-remove">حذف</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>هنوز محصولی نساختی.</p>
+{% endif %}
+{% endblock %}

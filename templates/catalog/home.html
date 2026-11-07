@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% block title %}فروشگاه BijanStore{% endblock %}
+
+{% block content %}
+
+<div class="hero-banner">
+    <div class="hero-content">
+        <h1>🛒 خرید از بهترین فروشندگان</h1>
+        <p>هزاران محصول از فروشندگان معتبر، با پرداخت امن و ارسال سریع</p>
+    </div>
+</div>
+
+<!-- نوار جستجو -->
+<div class="search-bar">
+    <form method="get" class="search-form">
+        <input type="text" name="q" value="{{ q }}"
+               placeholder="🔍 جستجوی محصول، فروشنده..."
+               class="search-input">
+        {% if active_category %}<input type="hidden" name="category" value="{{ active_category.slug }}">{% endif %}
+        {% if active_vendor %}<input type="hidden" name="vendor" value="{{ active_vendor.subdomain }}">{% endif %}
+        {% if sort %}<input type="hidden" name="sort" value="{{ sort }}">{% endif %}
+        <button type="submit" class="btn-search">جستجو</button>
+        {% if q or active_category or active_vendor %}
+            <a href="{% url 'catalog:home' %}" class="btn-reset">✕ پاک‌کردن</a>
+        {% endif %}
+    </form>
+</div>
+
+<div class="shop-layout">
+    <!-- سایدبار فیلترها -->
+    <aside class="filter-sidebar">
+
+        <!-- دسته‌بندی‌ها -->
+        <div class="filter-block">
+            <h3>📂 دسته‌بندی‌ها</h3>
+            <ul class="filter-list">
+                <li>
+                    <a href="?{% if q %}q={{ q }}&{% endif %}{% if active_vendor %}vendor={{ active_vendor.subdomain }}&{% endif %}sort={{ sort }}"
+                       class="{% if not active_category %}active{% endif %}">
+                        همه محصولات
+                    </a>
+                </li>
+                {% for cat in categories %}
+                    {% if not cat.parent %}
+                        <li>
+                            <a href="?category={{ cat.slug }}{% if q %}&q={{ q }}{% endif %}{% if active_vendor %}&vendor={{ active_vendor.subdomain }}{% endif %}&sort={{ sort }}"
+                               class="{% if active_category.id == cat.id %}active{% endif %}">
+                                {{ cat.name }}
+                            </a>
+                            {% if cat.children.exists %}
+                                <ul class="sub-list">
+                                    {% for sub in cat.children.all %}
+                                        <li>
+                                            <a href="?category={{ sub.slug }}{% if q %}&q={{ q }}{% endif %}{% if active_vendor %}&vendor={{ active_vendor.subdomain }}{% endif %}&sort={{ sort }}"
+                                               class="{% if active_category.id == sub.id %}active{% endif %}">
+                                                ↳ {{ sub.name }}
+                                            </a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- فروشنده‌ها -->
+        {% if vendors %}
+        <div class="filter-block">
+            <h3>🏪 فروشندگان</h3>
+            <ul class="filter-list">
+                <li>
+                    <a href="?{% if q %}q={{ q }}&{% endif %}{% if active_category %}category={{ active_category.slug }}&{% endif %}sort={{ sort }}"
+                       class="{% if not active_vendor %}active{% endif %}">
+                        همه فروشندگان
+                    </a>
+                </li>
+                {% for v in vendors %}
+                    <li>
+                        <a href="?vendor={{ v.subdomain }}{% if q %}&q={{ q }}{% endif %}{% if active_category %}&category={{ active_category.slug }}{% endif %}&sort={{ sort }}"
+                           class="{% if active_vendor.id == v.id %}active{% endif %}">
+                            {{ v.name }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+    </aside>
+
+    <!-- بخش محصولات -->
+    <div class="products-area">
+
+        <!-- نوار مرتب‌سازی و نتیجه -->
+        <div class="sort-bar">
+            <div class="result-info">
+                {% if q %}
+                    نتایج جستجو برای «{{ q }}»
+                {% elif active_category %}
+                    دسته «{{ active_category.name }}»
+                {% elif active_vendor %}
+                    محصولات «{{ active_vendor.name }}»
+                {% else %}
+                    همه محصولات
+                {% endif %}
+                <span class="count-badge">{{ products.count }} محصول</span>
+            </div>
+
+            <form method="get" class="sort-form">
+                {% if q %}<input type="hidden" name="q" value="{{ q }}">{% endif %}
+                {% if active_category %}<input type="hidden" name="category" value="{{ active_category.slug }}">{% endif %}
+                {% if active_vendor %}<input type="hidden" name="vendor" value="{{ active_vendor.subdomain }}">{% endif %}
+                <label>مرتب‌سازی:</label>
+                <select name="sort" onchange="this.form.submit()" class="form-input">
+                    <option value="newest" {% if sort == 'newest' %}selected{% endif %}>جدیدترین</option>
+                    <option value="cheapest" {% if sort == 'cheapest' %}selected{% endif %}>ارزان‌ترین</option>
+                    <option value="expensive" {% if sort == 'expensive' %}selected{% endif %}>گران‌ترین</option>
+                    <option value="name" {% if sort == 'name' %}selected{% endif %}>نام (الفبا)</option>
+                </select>
+            </form>
+        </div>
+
+        <!-- گرید محصولات -->
+        <div class="product-grid">
+            {% for product in products %}
+                <div class="product-card">
+                    <a href="{% url 'catalog:product_detail' product.slug %}">
+                        {% with first_img=product.images.first %}
+                            {% if first_img %}
+                                <img src="{{ first_img.image.url }}"
+                                     alt="{{ first_img.alt_text|default:product.name }}"
+                                     class="product-thumb">
+                            {% else %}
+                                <div class="product-img-placeholder">📦</div>
+                            {% endif %}
+                        {% endwith %}
+                        <h3>{{ product.name }}</h3>
+                    </a>
+                    <p class="vendor-name">
+                        فروشنده:
+                        <a href="?vendor={{ product.vendor.subdomain }}">{{ product.vendor.name }}</a>
+                    </p>
+                    <p class="price">{{ product.price }} تومان</p>
+                    {% if product.stock > 0 %}
+                        <form method="post" action="{% url 'orders:cart_add' product.id %}">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn-add">افزودن به سبد</button>
+                        </form>
+                    {% else %}
+                        <button class="btn-disabled" disabled>ناموجود</button>
+                    {% endif %}
+                </div>
+            {% empty %}
+                <div class="empty-products">
+                    <p>😔 محصولی با این فیلترها پیدا نشد.</p>
+                    <a href="{% url 'catalog:home' %}" class="btn-primary">مشاهده همه محصولات</a>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+{% endblock %}

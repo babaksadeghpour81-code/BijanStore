@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% block title %}پیش‌فاکتور{% endblock %}
+
+{% block content %}
+<h1 class="page-title">🧾 پیش‌فاکتور</h1>
+
+<div class="review-grid">
+    <div class="review-items">
+        {% for vendor, items in items_by_vendor.items %}
+            <div class="vendor-cart-group">
+                <div class="vendor-header">
+                    <h3>🏪 {{ vendor.name }}</h3>
+                </div>
+                <table class="cart-table">
+                    <thead>
+                        <tr>
+                            <th>محصول</th>
+                            <th>قیمت</th>
+                            <th>تعداد</th>
+                            <th>جمع</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for item in items %}
+                            <tr>
+                                <td>{{ item.product.name }}</td>
+                                <td>{{ item.product.price }} تومان</td>
+                                <td>{{ item.quantity }}</td>
+                                <td class="subtotal">{{ item.subtotal }} تومان</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+
+                <!-- تخفیف این فروشنده -->
+                {% if vendor in vendor_discounts %}
+                    {% with coupon=vendor_discounts|default_if_none:'' %}
+                    {% for v, c in vendor_discounts.items %}
+                        {% if v == vendor %}
+                            <div class="coupon-applied">
+                                <span>🏷️ کد «{{ c.code }}» اعمال شد</span>
+                                <form method="post" action="{% url 'orders:remove_coupon' vendor.id %}" style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-remove btn-small">حذف</button>
+                                </form>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                    {% endwith %}
+                {% else %}
+                    <form method="post" action="{% url 'orders:apply_coupon' %}" class="coupon-form">
+                        {% csrf_token %}
+                        <input type="text" name="code" placeholder="کد تخفیف این فروشنده..." class="form-input" style="text-transform:uppercase;">
+                        <button type="submit" class="btn-small">اعمال</button>
+                    </form>
+                {% endif %}
+
+                <div class="vendor-total">
+                    جمع: <strong>
+                        {% for v, t in vendor_totals.items %}{% if v == vendor %}{{ t }}{% endif %}{% endfor %}
+                        تومان</strong>
+                </div>
+            </div>
+        {% endfor %}
+    </div>
+
+    <aside class="review-sidebar">
+        <h3>اطلاعات گیرنده</h3>
+        <p><strong>{{ checkout_data.receiver_name }}</strong></p>
+        <p>{{ checkout_data.receiver_phone }}</p>
+        <p>{{ checkout_data.shipping_province }}، {{ checkout_data.shipping_city }}</p>
+        <p>{{ checkout_data.shipping_address }}</p>
+
+        <hr>
+
+        <p>جمع سبد: <strong>{{ grand_subtotal }} تومان</strong></p>
+        {% if grand_discount > 0 %}
+            <p style="color:#28a745;">تخفیف: <strong>-{{ grand_discount }} تومان</strong></p>
+        {% endif %}
+        <p>مبلغ نهایی: <strong class="price-big">{{ grand_total }} تومان</strong></p>
+
+        <form method="post" action="{% url 'orders:place_order' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-checkout" style="width:100%">
+                ✅ تایید و ثبت نهایی سفارش
+            </button>
+        </form>
+
+        <p class="small-note">
+            ⚠️ سفارش‌ها به تفکیک فروشنده ثبت می‌شوند.
+        </p>
+    </aside>
+</div>
+{% endblock %}

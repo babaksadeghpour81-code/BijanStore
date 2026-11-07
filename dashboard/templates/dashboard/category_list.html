@@ -1,0 +1,68 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}دسته‌بندی‌ها{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">📂 مدیریت دسته‌بندی‌ها</h1>
+    <a href="{% url 'dashboard:category_create' %}" class="btn-primary"
+       style="width:auto; padding:10px 20px; text-decoration:none;">
+        ➕ دسته‌بندی جدید
+    </a>
+</div>
+
+{% if categories %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>نام</th>
+                <th>فروشنده</th>
+                <th>زیرمجموعه</th>
+                <th>تعداد محصول</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+                {% if not cat.parent %}
+                    <tr style="background:#fafbfc;">
+                        <td><strong>{{ cat.name }}</strong></td>
+                        <td>{{ cat.vendor.name }}</td>
+                        <td>—</td>
+                        <td>
+                            {% with count=cat.products.count %}
+                                <span class="badge {% if count > 0 %}badge-paid{% else %}badge-pending{% endif %}">{{ count }}</span>
+                            {% endwith %}
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:5px;">
+                                <a href="{% url 'dashboard:category_edit' cat.id %}" class="btn-small" style="text-decoration:none;">ویرایش</a>
+                                <a href="{% url 'dashboard:category_delete' cat.id %}" class="btn-remove" style="text-decoration:none;">حذف</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% for sub in cat.children.all %}
+                        <tr>
+                            <td><span style="color:#888; margin-right:15px;">↳</span> {{ sub.name }}</td>
+                            <td>{{ sub.vendor.name }}</td>
+                            <td>{{ cat.name }}</td>
+                            <td>
+                                {% with count=sub.products.count %}
+                                    <span class="badge {% if count > 0 %}badge-paid{% else %}badge-pending{% endif %}">{{ count }}</span>
+                                {% endwith %}
+                            </td>
+                            <td>
+                                <div style="display:flex; gap:5px;">
+                                    <a href="{% url 'dashboard:category_edit' sub.id %}" class="btn-small" style="text-decoration:none;">ویرایش</a>
+                                    <a href="{% url 'dashboard:category_delete' sub.id %}" class="btn-remove" style="text-decoration:none;">حذف</a>
+                                </div>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>هنوز دسته‌بندی‌ای ساخته نشده.</p>
+{% endif %}
+{% endblock %}

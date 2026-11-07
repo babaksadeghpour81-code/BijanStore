@@ -1,0 +1,62 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}فروشنده‌ها{% endblock %}
+
+{% block admin_content %}
+<div class="page-header">
+    <h1 class="page-title">🏪 مدیریت فروشنده‌ها</h1>
+    <div style="display:flex; gap:10px;">
+        <a href="/admin/vendors/vendor/add/" class="btn-primary"
+           style="width:auto; padding:10px 20px; text-decoration:none;" target="_blank">
+            ➕ افزودن فروشنده جدید
+        </a>
+        <a href="/admin/vendors/vendor/" class="btn-primary"
+           style="width:auto; padding:10px 20px; text-decoration:none;" target="_blank">
+            ⚙️ مدیریت کامل در ادمین
+        </a>
+    </div>
+</div>
+
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>نام فروشگاه</th>
+            <th>نام حقوقی</th>
+            <th>شناسه ملی</th>
+            <th>مالک</th>
+            <th>کمیسیون</th>
+            <th>وضعیت</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for vendor in vendors %}
+            <tr>
+                <td>{{ vendor.name }}</td>
+                <td>{{ vendor.legal_name }}</td>
+                <td>{{ vendor.national_id }}</td>
+                <td>{{ vendor.owner.username|default:"—" }}</td>
+                <td>{{ vendor.commission_rate }}%</td>
+                <td>
+                    {% if vendor.is_active %}
+                        <span class="badge badge-delivered">فعال</span>
+                    {% else %}
+                        <span class="badge badge-pending">در انتظار</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <form method="post" action="{% url 'dashboard:vendor_approve' vendor.id %}" style="display:inline;">
+                        {% csrf_token %}
+                        {% if vendor.is_active %}
+                            <input type="hidden" name="action" value="reject">
+                            <button type="submit" class="btn-remove btn-small">غیرفعال</button>
+                        {% else %}
+                            <input type="hidden" name="action" value="approve">
+                            <button type="submit" class="btn-small">تأیید</button>
+                        {% endif %}
+                    </form>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

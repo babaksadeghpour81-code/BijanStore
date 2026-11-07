@@ -1,0 +1,103 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}تسویه‌ها{% endblock %}
+
+{% block admin_content %}
+<h1 class="page-title">💰 مدیریت تسویه‌ها</h1>
+
+<h2>📋 وضعیت فعلی فروشنده‌ها</h2>
+<table class="admin-table">
+    <thead>
+        <tr>
+            <th>فروشنده</th>
+            <th>سفارش قابل تسویه</th>
+            <th>کل فروش</th>
+            <th>کمیسیون</th>
+            <th>قابل پرداخت</th>
+            <th>عملیات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in settlements %}
+            <tr>
+                <td>{{ item.vendor.name }}</td>
+                <td>{{ item.unsettled_count }}</td>
+                <td>{{ item.total_sales }} تومان</td>
+                <td>{{ item.commission }} تومان</td>
+                <td><strong>{{ item.net_payable }} تومان</strong></td>
+                <td>
+                    {% if item.unsettled_count > 0 %}
+                        <form method="post" action="{% url 'dashboard:settlement_create' item.vendor.id %}" class="settle-form">
+                            {% csrf_token %}
+                            <label>از:</label>
+                            <input type="date" name="period_start" required>
+                            <label>تا:</label>
+                            <input type="date" name="period_end" required>
+                            <button type="submit" class="btn-small">ثبت تسویه</button>
+                        </form>
+                    {% else %}
+                        —
+                    {% endif %}
+                </td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="6">هنوز فروشنده فعالی وجود ندارد.</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<h2 style="margin-top: 40px;">📜 تاریخچه تسویه‌ها</h2>
+{% if history %}
+    <table class="admin-table">
+        <thead>
+            <tr>
+                <th>فروشنده</th>
+                <th>دوره</th>
+                <th>کل فروش</th>
+                <th>کمیسیون</th>
+                <th>قابل پرداخت</th>
+                <th>وضعیت</th>
+                <th>شماره پیگیری</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in history %}
+                <tr>
+                    <td>{{ s.vendor.name }}</td>
+                    <td>{{ s.period_start|date:"Y/m/d" }} تا {{ s.period_end|date:"Y/m/d" }}</td>
+                    <td>{{ s.total_sales }} تومان</td>
+                    <td>{{ s.commission }} تومان</td>
+                    <td><strong>{{ s.net_payable }} تومان</strong></td>
+                    <td>
+                        {% if s.status == 'paid' %}
+                            <span class="badge badge-delivered">پرداخت شده</span>
+                        {% elif s.status == 'draft' %}
+                            <span class="badge badge-pending">پیش‌نویس</span>
+                        {% else %}
+                            <span class="badge badge-cancelled">لغو شده</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s.reference_no|default:"—" }}</td>
+                    <td>
+                        {% if s.status == 'draft' %}
+                            <form method="post" action="{% url 'dashboard:settlement_mark_paid' s.id %}" style="display:inline-flex; gap:5px;">
+                                {% csrf_token %}
+                                <input type="text" name="reference_no" placeholder="شماره پیگیری" class="form-input" style="width:130px; padding:4px 8px;">
+                                <button type="submit" class="btn-small">تأیید پرداخت</button>
+                            </form>
+                            <form method="post" action="{% url 'dashboard:settlement_cancel' s.id %}" style="display:inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn-remove btn-small"
+                                        onclick="return confirm('لغو این تسویه؟');">لغو</button>
+                            </form>
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>هنوز تسویه‌ای ثبت نشده.</p>
+{% endif %}
+{% endblock %}
+

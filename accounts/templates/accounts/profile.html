@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}پروفایل من{% endblock %}
+
+{% block content %}
+<div class="profile-box">
+    <h2>سلام {{ user.first_name }} 👋</h2>
+    <ul>
+        <li><strong>نام کاربری:</strong> {{ user.username }}</li>
+        <li><strong>نام کامل:</strong> {{ user.get_full_name }}</li>
+        <li><strong>ایمیل:</strong> {{ user.email }}</li>
+        <li><strong>تاریخ عضویت:</strong> {{ user.date_joined|date:"Y/m/d" }}</li>
+        <li>
+            <a href="{% url 'password_change' %}" class="" style="text-decoration:none;">
+            🔑 تغییر رمز عبور
+            </a>
+        </li>
+    </ul>
+    <a href="{% url 'accounts:logout' %}" class="btn-logout">خروج از حساب</a>
+</div>
+{% endblock %}

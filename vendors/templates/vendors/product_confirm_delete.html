@@ -1,0 +1,14 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}حذف محصول{% endblock %}
+
+{% block vendor_content %}
+<div class="confirm-box">
+    <h2>حذف محصول</h2>
+    <p>مطمئنی می‌خوای «{{ product.name }}» رو حذف کنی؟ این عملیات قابل بازگشت نیست.</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-remove" style="padding:10px 25px;">بله، حذف کن</button>
+        <a href="{% url 'vendors:product_list' %}" class="btn-small" style="padding:10px 25px;">انصراف</a>
+    </form>
+</div>
+{% endblock %}

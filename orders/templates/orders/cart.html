@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}سبد خرید{% endblock %}
+
+{% block content %}
+<h1 class="page-title">🛒 سبد خرید</h1>
+
+{% if not items_by_vendor %}
+    <div class="empty-cart">
+        <p>سبد خرید شما خالیه.</p>
+        <a href="{% url 'catalog:home' %}" class="btn-primary">بریم خرید</a>
+    </div>
+{% else %}
+
+    {% for vendor, items in items_by_vendor.items %}
+        <div class="vendor-cart-group">
+            <div class="vendor-header">
+                <h3>🏪 {{ vendor.name }}</h3>
+                <small>پرداخت مستقیم به این فروشنده</small>
+            </div>
+
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>محصول</th>
+                        <th>قیمت واحد</th>
+                        <th>تعداد</th>
+                        <th>جمع</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                        <tr>
+                            <td>{{ item.product.name }}</td>
+                            <td>{{ item.product.price }} تومان</td>
+                            <td>
+                                <form method="post" action="{% url 'orders:cart_update' item.id %}" class="qty-form">
+                                    {% csrf_token %}
+                                    <input type="number" name="quantity" value="{{ item.quantity }}" min="1" max="{{ item.product.stock }}">
+                                    <button type="submit" class="btn-small">↻</button>
+                                </form>
+                            </td>
+                            <td class="subtotal">{{ item.subtotal }} تومان</td>
+                            <td>
+                                <form method="post" action="{% url 'orders:cart_remove' item.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-remove">✕</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+
+            <div class="vendor-total">
+                جمع این فروشنده:
+                <strong>
+                    {% for item in items %}{% if forloop.last %}{{ item.subtotal }}{% endif %}{% endfor %}
+                    تومان
+                </strong>
+            </div>
+        </div>
+    {% endfor %}
+
+    <div class="cart-summary">
+        <p>تعداد کل اقلام: <strong>{{ cart.total_items }}</strong></p>
+        <p>مبلغ کل: <strong class="price-big">{{ cart.total_price }} تومان</strong></p>
+        <a href="{% url 'orders:checkout' %}" class="btn-checkout">ادامه فرآیند خرید</a>
+        <p class="small-note">
+            ⚠️ پرداخت به تفکیک فروشنده انجام می‌شود. مسئولیت هر کالا بر عهده فروشنده آن است.
+        </p>
+    </div>
+
+{% endif %}
+{% endblock %}

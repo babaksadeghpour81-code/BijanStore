@@ -1,0 +1,59 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}سفارش {{ order.order_number }}{% endblock %}
+
+{% block vendor_content %}
+<h1 class="page-title">سفارش {{ order.order_number }}</h1>
+
+<div class="order-detail-box">
+    <div class="order-info">
+        <p><strong>مشتری:</strong> {{ order.receiver_name }} — {{ order.receiver_phone }}</p>
+        <p><strong>آدرس:</strong> {{ order.shipping_province }}، {{ order.shipping_city }}، {{ order.shipping_address }}</p>
+        <p><strong>تاریخ ثبت:</strong> {{ order.created_at|date:"Y/m/d H:i" }}</p>
+        {% if order.notes %}<p><strong>توضیحات مشتری:</strong> {{ order.notes }}</p>{% endif %}
+    </div>
+
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>محصول</th>
+                <th>قیمت</th>
+                <th>تعداد</th>
+                <th>جمع</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.unit_price }} تومان</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="subtotal">{{ item.total_price }} تومان</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="total-line">مبلغ کل: <strong>{{ order.total }} تومان</strong></p>
+
+    <hr style="margin: 20px 0;">
+    <h3>به‌روزرسانی وضعیت</h3>
+    <form method="post" class="status-form">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>وضعیت</label>
+            <select name="status" class="form-input">
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if order.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="form-group">
+            <label>کد رهگیری پست (اختیاری)</label>
+            <input type="text" name="tracking_code" value="{{ order.tracking_code }}" class="form-input">
+        </div>
+        <button type="submit" class="btn-primary" style="width:auto; padding: 10px 25px;">
+            ذخیره تغییرات
+        </button>
+    </form>
+</div>
+{% endblock %}

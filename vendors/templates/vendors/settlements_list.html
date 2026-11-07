@@ -1,0 +1,69 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}تسویه‌ها{% endblock %}
+
+{% block vendor_content %}
+<h1 class="page-title">💰 تسویه‌های من</h1>
+
+<div class="stats-grid">
+    <div class="stat-card stat-success">
+        <div class="stat-icon">✅</div>
+        <div>
+            <div class="stat-value">{{ total_paid }}</div>
+            <div class="stat-label">کل دریافتی (تومان)</div>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">⏳</div>
+        <div>
+            <div class="stat-value">{{ pending_total }}</div>
+            <div class="stat-label">در انتظار پرداخت (تومان)</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div>
+            <div class="stat-value">{{ pending_count }}</div>
+            <div class="stat-label">تسویه‌ی در انتظار</div>
+        </div>
+    </div>
+</div>
+
+{% if settlements %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>دوره</th>
+                <th>کل فروش</th>
+                <th>کمیسیون</th>
+                <th>قابل دریافت</th>
+                <th>وضعیت</th>
+                <th>شماره پیگیری</th>
+                <th>تاریخ ثبت</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for s in settlements %}
+                <tr>
+                    <td>{{ s.period_start|date:"Y/m/d" }} تا {{ s.period_end|date:"Y/m/d" }}</td>
+                    <td>{{ s.total_sales }} تومان</td>
+                    <td>{{ s.commission }} تومان</td>
+                    <td><strong>{{ s.net_payable }} تومان</strong></td>
+                    <td>
+                        {% if s.status == 'paid' %}
+                            <span class="badge badge-delivered">پرداخت شده</span>
+                        {% elif s.status == 'draft' %}
+                            <span class="badge badge-pending">در انتظار پرداخت</span>
+                        {% else %}
+                            <span class="badge badge-cancelled">لغو شده</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ s.reference_no|default:"—" }}</td>
+                    <td>{{ s.created_at|date:"Y/m/d" }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>هنوز تسویه‌ای ثبت نشده است. پس از فروش و پرداخت مشتریان، ادمین تسویه‌ها را ثبت می‌کند.</p>
+{% endif %}
+{% endblock %}

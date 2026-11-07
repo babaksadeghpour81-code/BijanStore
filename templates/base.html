@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="BijanStore — فروشگاه آنلاین چندفروشندگی">
+    <meta name="theme-color" content="#007bff">
+    <title>{% block title %}BijanStore{% endblock %}</title>
+    {% load static %}
+
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+
+    <!-- هدر -->
+    <header class="site-header">
+        <div class="container header-inner">
+            <a href="{% url 'catalog:home' %}" class="logo">
+                <span class="logo-icon">🛒</span>
+                <span class="logo-text">BijanStore</span>
+            </a>
+
+            <!-- منوی دسکتاپ -->
+            <nav class="desktop-nav">
+                <a href="{% url 'catalog:home' %}">خانه</a>
+                <a href="{% url 'orders:cart_detail' %}" class="nav-cart">
+                    🛒 سبد
+                    {% if cart_count %}<span class="nav-badge">{{ cart_count }}</span>{% endif %}
+                </a>
+
+                {% if user.is_superuser %}
+                    <a href="{% url 'dashboard:admin_dashboard' %}">👑 پنل ادمین</a>
+                {% endif %}
+
+                {% if current_vendor and current_vendor.is_active %}
+                    <a href="{% url 'vendors:dashboard' %}">🏪 پنل فروشنده</a>
+                {% endif %}
+
+                {% if user.is_authenticated %}
+                    <div class="user-menu">
+                        <button class="user-menu-toggle" onclick="toggleUserMenu(event)">
+                            👤 {{ user.get_full_name|default:user.username }}
+                            <span class="caret">▾</span>
+                        </button>
+                        <div class="user-menu-dropdown" id="userDropdown">
+                            <a href="{% url 'accounts:profile' %}">👤 پروفایل من</a>
+                            <a href="{% url 'orders:my_orders' %}">📋 سفارش‌های من</a>
+                            <a href="{% url 'notifications:list' %}">
+                                🔔 اعلان‌ها
+                                {% if unread_notifications_count > 0 %}
+                                    <span class="nav-badge">{{ unread_notifications_count }}</span>
+                                {% endif %}
+                            </a>
+                            <a href="{% url 'accounts:logout' %}" class="logout-item">🚪 خروج</a>
+                        </div>
+                    </div>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="btn-nav-login">ورود</a>
+                    <a href="{% url 'accounts:register' %}" class="btn-nav-register">ثبت‌نام</a>
+                {% endif %}
+            </nav>
+
+            <!-- دکمه منو موبایل -->
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()" aria-label="منو">
+                <span></span><span></span><span></span>
+            </button>
+        </div>
+
+        <!-- منوی موبایل -->
+        <div class="mobile-nav" id="mobileNav">
+            <a href="{% url 'catalog:home' %}">🏠 خانه</a>
+            <a href="{% url 'orders:cart_detail' %}">
+                🛒 سبد خرید {% if cart_count %}({{ cart_count }}){% endif %}
+            </a>
+            {% if user.is_superuser %}
+                <a href="{% url 'dashboard:admin_dashboard' %}">👑 پنل ادمین</a>
+            {% endif %}
+            {% if current_vendor and current_vendor.is_active %}
+                <a href="{% url 'vendors:dashboard' %}">🏪 پنل فروشنده</a>
+            {% endif %}
+            {% if user.is_authenticated %}
+                <a href="{% url 'accounts:profile' %}">👤 پروفایل</a>
+                <a href="{% url 'orders:my_orders' %}">📋 سفارش‌های من</a>
+                <a href="{% url 'notifications:list' %}">
+                    🔔 اعلان‌ها {% if unread_notifications_count %}({{ unread_notifications_count }}){% endif %}
+                </a>
+                <a href="{% url 'accounts:logout' %}" class="logout-item">🚪 خروج</a>
+            {% else %}
+                <a href="{% url 'accounts:login' %}">ورود</a>
+                <a href="{% url 'accounts:register' %}">ثبت‌نام</a>
+            {% endif %}
+        </div>
+    </header>
+
+    <!-- محتوا -->
+    <main class="site-main container">
+        {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- فوتر -->
+    <footer class="site-footer">
+        <div class="container footer-grid">
+            <div>
+                <h4>🛒 BijanStore</h4>
+                <p>فروشگاه آنلاین چندفروشندگی</p>
+                <p class="disclaimer">
+                    ⚠️ مسئولیت کیفیت، قیمت، گارانتی و ارسال کالا بر عهده فروشندگان است.
+                    BijanStore تنها تأییدکننده هویت فروشنده می‌باشد.
+                </p>
+            </div>
+            <div>
+                <h4>دسترسی سریع</h4>
+                <ul>
+                    <li><a href="{% url 'catalog:home' %}">خانه</a></li>
+                    <li><a href="{% url 'orders:cart_detail' %}">سبد خرید</a></li>
+                    <li><a href="{% url 'orders:my_orders' %}">سفارش‌های من</a></li>
+                </ul>
+            </div>
+            <div>
+                <h4>حساب کاربری</h4>
+                <ul>
+                    <li><a href="{% url 'accounts:login' %}">ورود</a></li>
+                    <li><a href="{% url 'accounts:register' %}">ثبت‌نام</a></li>
+                    <li><a href="{% url 'password_reset' %}">فراموشی رمز</a></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© ۲۰۲۵ BijanStore — تمامی حقوق محفوظ است.</p>
+        </div>
+    </footer>
+
+    <script src="{% static 'js/main.js' %}"></script>
+    <script>
+        function toggleMobileMenu() {
+            const nav = document.getElementById('mobileNav');
+            nav.classList.toggle('open');
+        }
+
+        function toggleUserMenu(event) {
+            event.stopPropagation();
+            const dropdown = document.getElementById('userDropdown');
+            dropdown.classList.toggle('open');
+        }
+
+        document.addEventListener('click', function(event) {
+            const dropdown = document.getElementById('userDropdown');
+            if (dropdown && dropdown.classList.contains('open')) {
+                dropdown.classList.remove('open');
+            }
+        });
+    </script>
+</body>
+</html>

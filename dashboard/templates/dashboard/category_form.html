@@ -1,0 +1,33 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}{% if mode == 'create' %}دسته‌بندی جدید{% else %}ویرایش دسته‌بندی{% endif %}{% endblock %}
+
+{% block admin_content %}
+<h1 class="page-title">
+    {% if mode == 'create' %}➕ دسته‌بندی جدید{% else %}✏️ ویرایش: {{ category.name }}{% endif %}
+</h1>
+
+<form method="post" class="product-form">
+    {% csrf_token %}
+
+    {% for field in form %}
+        <div class="form-group">
+            <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+                <span class="field-error">{{ field.errors.0 }}</span>
+            {% endif %}
+            {% if field.help_text %}
+                <small class="help">{{ field.help_text|safe }}</small>
+            {% endif %}
+        </div>
+    {% endfor %}
+
+    <div style="display:flex; gap:10px; margin-top:20px;">
+        <button type="submit" class="btn-primary" style="width:auto; padding:10px 25px;">
+            {% if mode == 'create' %}ایجاد{% else %}ذخیره{% endif %}
+        </button>
+        <a href="{% url 'dashboard:category_list' %}" class="btn-small"
+           style="padding:10px 25px; text-decoration:none;">انصراف</a>
+    </div>
+</form>
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}ثبت‌نام{% endblock %}
+
+{% block content %}
+<div class="auth-box">
+    <h2>ثبت‌نام در BijanStore</h2>
+
+    {% if form.non_field_errors %}
+        <div class="form-errors">{{ form.non_field_errors }}</div>
+    {% endif %}
+
+    <form method="post" novalidate>
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <span class="field-error">{{ field.errors.0 }}</span>
+                {% endif %}
+                {% if field.help_text %}
+                    <small class="help">{{ field.help_text|safe }}</small>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-primary">ثبت‌نام</button>
+    </form>
+
+    <p class="auth-alt">حساب داری؟ <a href="{% url 'accounts:login' %}">وارد شو</a></p>
+</div>
+{% endblock %}

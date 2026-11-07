@@ -1,0 +1,112 @@
+{% extends 'dashboard/base_dashboard.html' %}
+{% block title %}داشبورد{% endblock %}
+
+{% block admin_content %}
+<h1 class="page-title">📊 داشبورد مدیریت</h1>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">🏪</div>
+        <div>
+            <div class="stat-value">{{ total_vendors }}</div>
+            <div class="stat-label">کل فروشنده‌ها</div>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <div class="stat-icon">✅</div>
+        <div>
+            <div class="stat-value">{{ active_vendors }}</div>
+            <div class="stat-label">فروشنده فعال</div>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">⏳</div>
+        <div>
+            <div class="stat-value">{{ pending_vendors }}</div>
+            <div class="stat-label">در انتظار تأیید</div>
+        </div>
+    </div>
+    <div class="stat-card stat-primary">
+        <div class="stat-icon">📦</div>
+        <div>
+            <div class="stat-value">{{ total_orders }}</div>
+            <div class="stat-label">کل سفارش‌ها</div>
+        </div>
+    </div>
+</div>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">💰</div>
+        <div>
+            <div class="stat-value">{{ total_revenue }}</div>
+            <div class="stat-label">درآمد کل (تومان)</div>
+        </div>
+    </div>
+    <div class="stat-card stat-primary">
+        <div class="stat-icon">📈</div>
+        <div>
+            <div class="stat-value">{{ total_commission }}</div>
+            <div class="stat-label">کمیسیون سایت (تومان)</div>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <div class="stat-icon">📅</div>
+        <div>
+            <div class="stat-value">{{ monthly_revenue }}</div>
+            <div class="stat-label">فروش ۳۰ روز اخیر</div>
+        </div>
+    </div>
+</div>
+
+<div class="two-columns">
+    <div>
+        <h2>آخرین سفارش‌ها</h2>
+        {% if recent_orders %}
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>شماره</th>
+                        <th>فروشنده</th>
+                        <th>مبلغ</th>
+                        <th>وضعیت</th>
+                        <th>تاریخ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td>{{ order.order_number }}</td>
+                            <td>{{ order.vendor.name }}</td>
+                            <td>{{ order.total }} تومان</td>
+                            <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                            <td>{{ order.created_at|date:"Y/m/d" }}</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>هنوز سفارشی ثبت نشده.</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <h2>فروشنده‌های در انتظار تأیید</h2>
+        {% if pending_vendor_list %}
+            {% for vendor in pending_vendor_list %}
+                <div class="pending-vendor-card">
+                    <p><strong>{{ vendor.name }}</strong></p>
+                    <p class="small">{{ vendor.legal_name }} — {{ vendor.national_id }}</p>
+                    <form method="post" action="{% url 'dashboard:vendor_approve' vendor.id %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="approve">
+                        <button type="submit" class="btn-small">✅ تأیید</button>
+                    </form>
+                </div>
+            {% endfor %}
+        {% else %}
+            <p>فروشنده‌ای در انتظار تأیید نیست.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

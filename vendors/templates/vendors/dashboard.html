@@ -1,0 +1,137 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}داشبورد{% endblock %}
+
+{% block vendor_content %}
+<h1 class="page-title">📊 داشبورد فروشگاه</h1>
+
+<!-- ردیف اول: آمار کلی -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon">📋</div>
+        <div>
+            <div class="stat-value">{{ total_orders }}</div>
+            <div class="stat-label">کل سفارش‌ها</div>
+        </div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-icon">⏳</div>
+        <div>
+            <div class="stat-value">{{ pending_orders }}</div>
+            <div class="stat-label">در انتظار پرداخت</div>
+        </div>
+    </div>
+    <div class="stat-card stat-success">
+        <div class="stat-icon">✅</div>
+        <div>
+            <div class="stat-value">{{ paid_orders }}</div>
+            <div class="stat-label">پرداخت‌شده</div>
+        </div>
+    </div>
+    <div class="stat-card stat-primary">
+        <div class="stat-icon">💰</div>
+        <div>
+            <div class="stat-value">{{ total_revenue_all_time }}</div>
+            <div class="stat-label">فروش کل (تومان)</div>
+        </div>
+    </div>
+</div>
+
+<!-- ردیف دوم: تسویه -->
+<div class="settlement-highlight">
+    <div class="settle-box">
+        <div class="settle-label">کمیسیون سایت ({{ vendor.commission_rate }}%)</div>
+        <div class="settle-value">{{ commission }} تومان</div>
+    </div>
+    <div class="settle-box settle-primary">
+        <div class="settle-label">💰 مبلغ قابل تسویه به شما</div>
+        <div class="settle-value">{{ net_payable }} تومان</div>
+    </div>
+    <div class="settle-box">
+        <div class="settle-label">📅 فروش ۳۰ روز اخیر</div>
+        <div class="settle-value">{{ revenue_30 }} تومان</div>
+    </div>
+    <div class="settle-box">
+        <div class="settle-label">📅 فروش ۷ روز اخیر</div>
+        <div class="settle-value">{{ revenue_7 }} تومان</div>
+    </div>
+</div>
+
+<!-- نمودار فروش ۷ روز -->
+<h2>📈 فروش ۷ روز اخیر</h2>
+<div class="chart-container">
+    {% for day in daily_sales %}
+        <div class="chart-bar-wrap">
+            <div class="chart-bar" title="{{ day.revenue }} تومان">
+                <div class="chart-bar-fill" style="height: {% if day.revenue > 0 %}100%{% else %}5%{% endif %};"></div>
+            </div>
+            <div class="chart-label">{{ day.date }}</div>
+            <div class="chart-value">{{ day.revenue }}</div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- دو ستون: پرفروش‌ها + سفارش‌های اخیر -->
+<div class="two-columns" style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 30px;">
+
+    <div>
+        <h2>🔥 محصولات پرفروش</h2>
+        {% if top_products %}
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>محصول</th>
+                        <th>تعداد فروش</th>
+                        <th>مبلغ</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for p in top_products %}
+                        <tr>
+                            <td>{{ p.product_name }}</td>
+                            <td>{{ p.total_qty }}</td>
+                            <td>{{ p.total_amount }} تومان</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>هنوز فروشی ثبت نشده.</p>
+        {% endif %}
+    </div>
+
+    <div>
+        <h2>🕐 سفارش‌های اخیر</h2>
+        {% if recent_orders %}
+            <table class="cart-table">
+                <thead>
+                    <tr>
+                        <th>شماره</th>
+                        <th>مبلغ</th>
+                        <th>وضعیت</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for order in recent_orders %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'vendors:order_detail' order.order_number %}">
+                                    {{ order.order_number }}
+                                </a>
+                            </td>
+                            <td>{{ order.total }} تومان</td>
+                            <td>
+                                <span class="badge badge-{{ order.status }}">
+                                    {{ order.get_status_display }}
+                                </span>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% else %}
+            <p>هنوز سفارشی نداری.</p>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+{% block title %}اعلان‌ها{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1 class="page-title">🔔 اعلان‌های من</h1>
+    {% if unread_count > 0 %}
+        <form method="post" action="{% url 'notifications:mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn-small">علامت‌گذاری همه به‌عنوان خوانده‌شده</button>
+        </form>
+    {% endif %}
+</div>
+
+{% if notifications %}
+    <div class="notif-list">
+        {% for n in notifications %}
+            <div class="notif-card {% if not n.is_read %}unread{% endif %}">
+                <div class="notif-icon">
+                    {% if n.type == 'order_status' %}📦
+                    {% elif n.type == 'payment' %}💳
+                    {% elif n.type == 'coupon' %}🏷️
+                    {% elif n.type == 'vendor' %}🏪
+                    {% elif n.type == 'settlement' %}💰
+                    {% else %}🔔
+                    {% endif %}
+                </div>
+                <div class="notif-body">
+                    <div class="notif-header">
+                        <strong>{{ n.title }}</strong>
+                        <span class="notif-date">{{ n.created_at|date:"Y/m/d H:i" }}</span>
+                    </div>
+                    <p class="notif-message">{{ n.message }}</p>
+                    {% if n.link %}
+                        <a href="{% url 'notifications:click' n.id %}" class="btn-small">مشاهده</a>
+                    {% endif %}
+                </div>
+                {% if not n.is_read %}
+                    <form method="post" action="{% url 'notifications:mark_read' n.id %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-small" title="علامت‌گذاری خوانده‌شده">✓</button>
+                    </form>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="empty-cart">
+        <p>📭 هنوز اعلانی نداری.</p>
+    </div>
+{% endif %}
+{% endblock %}

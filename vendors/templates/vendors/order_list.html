@@ -1,0 +1,45 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}سفارش‌ها{% endblock %}
+
+{% block vendor_content %}
+<div class="page-header">
+    <h1 class="page-title">سفارش‌ها</h1>
+    <form method="get" class="filter-form">
+        <select name="status" onchange="this.form.submit()" class="form-input">
+            <option value="">همه وضعیت‌ها</option>
+            {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+
+{% if orders %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>شماره</th>
+                <th>مشتری</th>
+                <th>مبلغ</th>
+                <th>وضعیت</th>
+                <th>تاریخ</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for order in orders %}
+                <tr>
+                    <td>{{ order.order_number }}</td>
+                    <td>{{ order.receiver_name }}</td>
+                    <td>{{ order.total }} تومان</td>
+                    <td><span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></td>
+                    <td>{{ order.created_at|date:"Y/m/d" }}</td>
+                    <td><a href="{% url 'vendors:order_detail' order.order_number %}" class="btn-small">جزئیات</a></td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>سفارشی با این فیلتر پیدا نشد.</p>
+{% endif %}
+{% endblock %}

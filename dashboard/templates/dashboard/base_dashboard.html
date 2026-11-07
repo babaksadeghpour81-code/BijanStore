@@ -1,0 +1,72 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}پنل ادمین{% endblock %} — BijanStore</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body class="admin-body">
+
+    <header class="admin-topbar">
+        <div class="admin-topbar-inner">
+            <div class="admin-brand">
+                <span>👑</span>
+                <div>
+                    <div class="brand-title">BijanStore</div>
+                    <div class="brand-subtitle">پنل مدیریت کل</div>
+                </div>
+            </div>
+            <div class="admin-user">
+                <span>👤 {{ user.username }}</span>
+                <a href="{% url 'notifications:list' %}" class="topbar-link notif-bell">
+                    🔔
+                    {% if unread_notifications_count > 0 %}
+                        <span class="notif-badge">{{ unread_notifications_count }}</span>
+                    {% endif %}
+                </a>
+                <a href="{% url 'catalog:home' %}" target="_blank">🌐 مشاهده سایت</a>
+                <a href="/admin/" class="topbar-link">⚙️ ادمین جنگو</a>
+                <a href="{% url 'accounts:logout' %}" class="logout">خروج</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="admin-layout">
+        <aside class="admin-sidebar">
+            <nav>
+                <a href="{% url 'dashboard:admin_dashboard' %}"
+                   class="{% if request.resolver_match.url_name == 'admin_dashboard' %}active{% endif %}">
+                    📊 داشبورد
+                </a>
+                <a href="{% url 'dashboard:vendor_management' %}"
+                   class="{% if 'vendor' in request.resolver_match.url_name %}active{% endif %}">
+                    🏪 فروشنده‌ها
+                </a>
+                <a href="{% url 'dashboard:category_list' %}"
+                   class="{% if 'category' in request.resolver_match.url_name %}active{% endif %}">
+                    📂 دسته‌بندی‌ها
+                </a>
+                <a href="{% url 'dashboard:settlements' %}"
+                   class="{% if request.resolver_match.url_name == 'settlements' %}active{% endif %}">
+                    💰 تسویه‌ها
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <small>BijanStore Admin</small>
+            </div>
+        </aside>
+
+        <main class="admin-content">
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+                {% endfor %}
+            {% endif %}
+            {% block admin_content %}{% endblock %}
+        </main>
+    </div>
+
+</body>
+</html>

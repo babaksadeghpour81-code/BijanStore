@@ -1,0 +1,12 @@
+{% extends 'base.html' %}
+{% block title %}ثبت سفارش{% endblock %}
+
+{% block content %}
+<div class="success-box">
+    <div class="success-icon">✅</div>
+    <h2>سفارش شما با موفقیت ثبت شد!</h2>
+    <p>برای پیگیری، به بخش «سفارش‌های من» بروید.</p>
+    <a href="{% url 'orders:my_orders' %}" class="btn-primary">مشاهده سفارش‌ها</a>
+    <a href="{% url 'catalog:home' %}" class="btn-checkout">ادامه خرید</a>
+</div>
+{% endblock %}

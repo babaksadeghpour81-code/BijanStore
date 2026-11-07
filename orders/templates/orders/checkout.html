@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}اطلاعات ارسال{% endblock %}
+
+{% block content %}
+<h1 class="page-title">📦 اطلاعات ارسال</h1>
+
+<div class="checkout-container">
+    <form method="post" class="checkout-form">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <span class="field-error">{{ field.errors.0 }}</span>
+                {% endif %}
+            </div>
+        {% endfor %}
+
+        <button type="submit" class="btn-primary">ادامه و مشاهده پیش‌فاکتور</button>
+    </form>
+
+    <aside class="checkout-sidebar">
+        <h3>خلاصه سبد</h3>
+        <p>تعداد اقلام: {{ cart.total_items }}</p>
+        <p>مبلغ کل: <strong>{{ cart.total_price }} تومان</strong></p>
+        <p class="small-note">
+            ⚠️ پس از تایید، سفارش‌ها به تفکیک فروشنده ثبت می‌شوند.
+        </p>
+    </aside>
+</div>
+{% endblock %}

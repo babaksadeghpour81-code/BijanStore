@@ -1,0 +1,10 @@
+<a href="{% url 'catalog:product_detail' product.slug %}">
+    {% if product.main_image %}
+        <img src="{{ product.main_image.image.url }}"
+             alt="{{ product.main_image.alt_text|default:product.name }}"
+             class="product-thumb">
+    {% else %}
+        <div class="product-img-placeholder">📦</div>
+    {% endif %}
+    <h3>{{ product.name }}</h3>
+</a>

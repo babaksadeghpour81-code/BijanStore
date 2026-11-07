@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% block title %}سفارش {{ order.order_number }}{% endblock %}
+
+{% block content %}
+<h1 class="page-title">سفارش {{ order.order_number }}</h1>
+
+{% if order.status == 'pending' %}
+    <div class="payment-box">
+        <p>این سفارش در انتظار پرداخت است.</p>
+        <div style="display:flex; gap:10px; flex-wrap:wrap;">
+            <a href="{% url 'orders:payment_start' order.order_number %}" class="btn-checkout" style="margin-top: 8px;">
+                💳 پرداخت آنلاین
+            </a>
+            <form method="post" action="{% url 'orders:order_delete' order.order_number %}"
+                  onsubmit="return confirm('آیا از حذف این سفارش مطمئنی؟');">
+                {% csrf_token %}
+                <button type="submit" class="btn-remove" style="padding:14px 16px; margin-top: 8px;">
+                    🗑️ حذف سفارش
+                </button>
+            </form>
+        </div>
+    </div>
+{% elif order.status == 'paid' %}
+    <p class="paid-info">
+        ✅ پرداخت شده — کد رهگیری: <strong>{{ order.payment_ref_id }}</strong>
+    </p>
+{% elif order.status == 'cancelled' %}
+    <div class="payment-box" style="background:#f8d7da; border-right-color:#dc3545;">
+        <p>این سفارش لغو شده است.</p>
+        <form method="post" action="{% url 'orders:order_delete' order.order_number %}"
+              onsubmit="return confirm('آیا از حذف این سفارش مطمئنی؟');">
+            {% csrf_token %}
+            <button type="submit" class="btn-remove">🗑️ حذف سفارش</button>
+        </form>
+    </div>
+{% endif %}
+
+<hr>
+
+<div class="order-detail-box">
+    <div class="order-info">
+        <p><strong>فروشنده:</strong> {{ order.vendor.legal_name }}</p>
+        <p><strong>شناسه ملی فروشنده:</strong> {{ order.vendor.national_id }}</p>
+        <p><strong>وضعیت:</strong> <span class="badge badge-{{ order.status }}">{{ order.get_status_display }}</span></p>
+        <p><strong>تاریخ ثبت:</strong> {{ order.created_at|date:"Y/m/d H:i" }}</p>
+        <hr>
+        <p><strong>گیرنده:</strong> {{ order.receiver_name }}</p>
+        <p><strong>تلفن:</strong> {{ order.receiver_phone }}</p>
+        <p><strong>آدرس:</strong> {{ order.shipping_province }}، {{ order.shipping_city }}، {{ order.shipping_address }}</p>
+        {% if order.tracking_code %}
+            <p><strong>کد رهگیری:</strong> {{ order.tracking_code }}</p>
+        {% endif %}
+    </div>
+
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>محصول</th>
+                <th>قیمت واحد</th>
+                <th>تعداد</th>
+                <th>جمع</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for item in order.items.all %}
+                <tr>
+                    <td>{{ item.product_name }}</td>
+                    <td>{{ item.unit_price }} تومان</td>
+                    <td>{{ item.quantity }}</td>
+                    <td class="subtotal">{{ item.total_price }} تومان</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <p class="total-line">جمع کل: <strong>{{ order.total }} تومان</strong></p>
+
+    <p class="legal-note">
+        ⚠️ مسئولیت کیفیت، گارانتی و ارسال این سفارش بر عهده {{ order.vendor.legal_name }} است.
+        BijanStore تنها تأییدکننده هویت فروشنده می‌باشد.
+    </p>
+</div>
+{% endblock %}

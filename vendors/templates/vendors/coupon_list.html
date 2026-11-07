@@ -1,0 +1,70 @@
+{% extends 'vendors/base_vendor.html' %}
+{% block title %}کدهای تخفیف{% endblock %}
+
+{% block vendor_content %}
+<div class="page-header">
+    <h1 class="page-title">🏷️ کدهای تخفیف</h1>
+    <a href="{% url 'vendors:coupon_create' %}" class="btn-primary" style="width:auto; padding:10px 20px;">
+        ➕ کد جدید
+    </a>
+</div>
+
+{% if coupons %}
+    <table class="cart-table">
+        <thead>
+            <tr>
+                <th>کد</th>
+                <th>تخفیف</th>
+                <th>حداقل خرید</th>
+                <th>استفاده</th>
+                <th>اعتبار</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in coupons %}
+                <tr>
+                    <td><strong>{{ c.code }}</strong></td>
+                    <td>
+                        {% if c.discount_type == 'percent' %}
+                            {{ c.discount_value }}%
+                            {% if c.max_discount %}(سقف {{ c.max_discount }}){% endif %}
+                        {% else %}
+                            {{ c.discount_value }} تومان
+                        {% endif %}
+                    </td>
+                    <td>{{ c.min_purchase }} تومان</td>
+                    <td>
+                        {{ c.used_count }}
+                        {% if c.max_uses > 0 %}/ {{ c.max_uses }}{% endif %}
+                    </td>
+                    <td>
+                        {{ c.valid_from|date:"Y/m/d" }}<br>
+                        تا {{ c.valid_until|date:"Y/m/d" }}
+                    </td>
+                    <td>
+                        {% if c.is_valid %}
+                            <span class="badge badge-delivered">فعال</span>
+                        {% elif not c.is_active %}
+                            <span class="badge badge-cancelled">غیرفعال</span>
+                        {% else %}
+                            <span class="badge badge-pending">منقضی</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'vendors:coupon_toggle' c.id %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-small">
+                                {% if c.is_active %}غیرفعال{% else %}فعال{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% else %}
+    <p>هنوز کد تخفیفی نساختی.</p>
+{% endif %}
+{% endblock %}
