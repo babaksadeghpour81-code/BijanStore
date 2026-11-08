@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure-#26dg1wumc^awkg)uu*k%z+h-=o%c$#fd067^qnm4pnxxqcy+^
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -39,15 +39,21 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'corsheaders',
     'accounts.apps.AccountsConfig',
     'vendors.apps.VendorsConfig',
     'catalog.apps.CatalogConfig',
     'orders.apps.OrdersConfig',
     'dashboard.apps.DashboardConfig',
-    'notifications.apps.NotificationsConfig'
+    'notifications.apps.NotificationsConfig',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'api.apps.ApiConfig'
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -139,22 +145,21 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
 
-# Email
-# https://docs.djangoproject.com/en/6.1/topics/email/#topic-email-configuration
+# ===== تنظیمات ایمیل (Django 6.1+) =====
+MAILERS = {
+    'default': {
+        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
+    },
+}
 
-#MAILERS = {
-#    'default': {
-#        'BACKEND': 'django.core.mail.backends.console.EmailBackend',
-#    },
-#}
+DEFAULT_FROM_EMAIL = 'BijanStore <noreply@bijanstore.ir>'
+
 
 # تنظیمات زرین‌پال
 ZARINPAL_SANDBOX = True   # برای تست True، برای پروداکشن False
 ZARINPAL_CALLBACK_BASE = "http://127.0.0.1:8000"   # در پروداکشن دامنه واقعی
 
 # ===== تنظیمات ایمیل =====
-# در حالت توسعه: ایمیل‌ها در کنسول چاپ می‌شن (نیازی به SMTP نیست)
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 # برای پروداکشن، این‌ها رو از حالت کامنت خارج کن و مقادیر واقعی بذار:
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
@@ -167,10 +172,58 @@ EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 
 DEFAULT_FROM_EMAIL = 'BijanStore <noreply@bijanstore.ir>'
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticatedOrReadOnly',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 20,
+    'DEFAULT_RENDERER_CLASSES': [
+        'rest_framework.renderers.JSONRenderer',
+    ],
+}
+
+from datetime import timedelta
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=1),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': False,
+    'AUTH_HEADER_TYPES': ('Bearer',),
+}
+
 # بازشدن درگاه پرداخت هنگام کانکت زیردامنه
 SESSION_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SAMESITE = 'Lax'
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = not DEBUG
+CSRF_COOKIE_SECURE = not DEBUG
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
+
+# ===== تنظیمات CORS (برای اپ موبایل) =====
+CORS_ALLOW_ALL_ORIGINS = True   # در توسعه: اجازه از همه دامنه‌ها
+# CORS_ALLOWED_ORIGINS = [      # در پروداکشن: فقط دامنه‌های مشخص
+#     "https://bijanstore.ir",
+#     "https://app.bijanstore.ir",
+# ]
+
+# اگر از کوکی و اعتبارنامه استفاده می‌کنی (JWT از هدر استفاده می‌کنه، پس لازم نیست)
+CORS_ALLOW_CREDENTIALS = False
+
+# مجاز کردن هدرهای JWT
+CORS_ALLOW_HEADERS = [
+    "accept",
+    "accept-encoding",
+    "authorization",
+    "content-type",
+    "dnt",
+    "origin",
+    "user-agent",
+    "x-csrftoken",
+    "x-requested-with",
+]
 #######

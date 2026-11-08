@@ -33,16 +33,16 @@ class Notification(models.Model):
         return f"{self.user.username} — {self.title}"
 
     @classmethod
-    def send(cls, user, title, message, type='system', link=''):
+    def send(cls, user, title, message, type='system', link='', send_email=True):
         """ساخت اعلان + ارسال ایمیل"""
         notification = cls.objects.create(
             user=user, title=title, message=message,
             type=type, link=link
         )
 
-        # ارسال ایمیل (اگر کاربر ایمیل داشته باشه)
-        from .emails import send_notification_email
-        send_notification_email(user, title, message, link)
+        if send_email:
+            from .emails import send_notification_email
+            send_notification_email(user, title, message, link)
 
         return notification
 #######
