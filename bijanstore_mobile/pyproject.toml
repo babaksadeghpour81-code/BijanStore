@@ -26,11 +26,19 @@ asyncio_mode = "auto"
 testpaths = ["tests"]
 pythonpath = ["src"]
 
-[tool.flet]
-org = "com.mycompany"
-product = "bijanstore-mobile"
-company = "Flet"
-copyright = "Copyright (C) 2023-2026 by Flet"
+[tool.flet.app]
+name = "BijanStore"
+org = "ir.bijanstore"
+product = "BijanStore"
+company = "BijanStore"
+copyright = "Copyright (C) 2026 BijanStore"
+app_id = "ir.bijanstore.app"
+
+[tool.flet.android]
+icon = "assets/images/logo.png"
+
+[tool.flet.ios]
+icon = "assets/images/logo.png"
 
 # src/assets/icon.png is the icon for every platform. Keep it transparent and
 # filling the whole canvas: web, Windows and Linux show it as-is, and Flet

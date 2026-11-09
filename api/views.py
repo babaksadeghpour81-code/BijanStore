@@ -19,6 +19,7 @@ from .serializers import (
     OrderListSerializer,
     OrderDetailSerializer,
 )
+from notifications.models import Notification
 
 
 def get_or_create_user_cart(user):
@@ -387,4 +388,85 @@ class OrderViewSet(viewsets.ViewSet):
                 return Response({'error': f'پرداخت تأیید نشد. کد: {verification.code}'}, status=status.HTTP_400_BAD_REQUEST)
         except ZarinpalException as e:
             return Response({'error': f'خطا در تأیید: {e.message}'}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+    @action(detail=True, methods=['get'], url_path='status')
+    def order_status(self, request, pk=None):
+        """وضعیت یک سفارش — برای چک کردن نتیجه پرداخت"""
+        try:
+            order = Order.objects.get(order_number=pk, user=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'سفارش پیدا نشد.'}, status=status.HTTP_404_NOT_FOUND)
+
+        return Response({
+            'order_number': order.order_number,
+            'status': order.status,
+            'status_display': order.get_status_display(),
+            'payment_ref_id': order.payment_ref_id,
+            'paid_at': order.paid_at.isoformat() if order.paid_at else None,
+            'total': int(order.total),
+        })
+
+    @action(detail=True, methods=['post'], url_path='delete')
+    def delete_order(self, request, pk=None):
+        try:
+            order = Order.objects.get(order_number=pk, user=request.user)
+        except Order.DoesNotExist:
+            return Response({'error': 'سفارش پیدا نشد.'}, status=status.HTTP_404_NOT_FOUND)
+
+        if order.status not in ['pending', 'cancelled']:
+            return Response(
+                {'error': 'فقط سفارش‌های در انتظار پرداخت یا لغو‌شده قابل حذف هستند.'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        with transaction.atomic():
+            # برگرداندن موجودی محصولات
+            for item in order.items.all():
+                if item.product:
+                    item.product.stock += item.quantity
+                    item.product.save()
+
+            # آزاد کردن کوپن
+            if order.coupon:
+                CouponUsage.objects.filter(coupon=order.coupon, order=order).delete()
+                if order.coupon.used_count > 0:
+                    order.coupon.used_count -= 1
+                    order.coupon.save()
+
+            order.delete()
+
+        return Response({'status': 'ok', 'message': 'سفارش حذف شد.'})
+
+class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
+    """API اعلان‌ها — فقط برای کاربر لاگین‌کرده"""
+    permission_classes = [IsAuthenticated]
+    serializer_class = None  # serializer inline
+
+    def get_queryset(self):
+        return Notification.objects.filter(user=self.request.user).order_by('-created_at')
+
+    def list(self, request):
+        notifications = self.get_queryset()
+        data = []
+        for n in notifications:
+            data.append({
+                'id': n.id,
+                'type': n.type,
+                'title': n.title,
+                'message': n.message,
+                'link': n.link,
+                'is_read': n.is_read,
+                'created_at': n.created_at.isoformat(),
+            })
+        return Response(data)
+
+    @action(detail=True, methods=['post'], url_path='read')
+    def mark_read(self, request, pk=None):
+        try:
+            notification = Notification.objects.get(id=pk, user=request.user)
+        except Notification.DoesNotExist:
+            return Response({'error': 'اعلان پیدا نشد.'}, status=status.HTTP_404_NOT_FOUND)
+        notification.is_read = True
+        notification.save()
+        return Response({'status': 'ok'})
 

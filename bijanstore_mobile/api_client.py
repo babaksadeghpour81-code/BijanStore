@@ -90,3 +90,47 @@ def get_orders():
     if response.status_code == 200:
         return response.json()
     return []
+
+
+def get_order_detail(order_number):
+    url = f"{API_BASE}/orders/{order_number}/"
+    response = requests.get(url, headers=_headers())
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+
+def get_notifications():
+    url = f"{API_BASE}/notifications/"
+    response = requests.get(url, headers=_headers())
+    if response.status_code == 200:
+        return response.json()
+    return []
+
+
+def mark_notification_read(notification_id):
+    url = f"{API_BASE}/notifications/{notification_id}/read/"
+    response = requests.post(url, headers=_headers())
+    return response.status_code == 200
+
+def get_order_status(order_number):
+    url = f"{API_BASE}/orders/{order_number}/status/"
+    response = requests.get(url, headers=_headers())
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+
+def start_payment(order_number):
+    """درخواست لینک پرداخت"""
+    url = f"{API_BASE}/orders/{order_number}/pay/"
+    response = requests.post(url, headers=_headers())
+    if response.status_code == 200:
+        return response.json()
+    return None
+
+def delete_order(order_number):
+    url = f"{API_BASE}/orders/{order_number}/delete/"
+    response = requests.post(url, headers=_headers())
+    return response.status_code == 200
+

@@ -10,6 +10,14 @@ class CartScreen(ft.View):
         self.items_container = ft.Column(spacing=10)
         self.total_text = ft.Text("", size=18, weight=ft.FontWeight.BOLD)
 
+        # دکمه ثبت سفارش (پیش‌فرض غیرفعال)
+        self.checkout_btn = ft.Button(
+            "ادامه و ثبت سفارش",
+            width=300,
+            disabled=True,  # تا زمانی که سبد خالی است، غیرفعال
+            on_click=lambda e: self.on_checkout(),
+        )
+
         super().__init__(
             route="/cart",
             appbar=ft.AppBar(
@@ -31,11 +39,7 @@ class CartScreen(ft.View):
                                 [ft.Text("جمع کل:", size=16), self.total_text],
                                 alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                             ),
-                            ft.Button(
-                                "ادامه و ثبت سفارش",
-                                width=300,
-                                on_click=lambda e: self.on_checkout(),
-                            ),
+                            self.checkout_btn,
                         ],
                         spacing=15,
                     ),
@@ -54,6 +58,7 @@ class CartScreen(ft.View):
                 ft.Text("سبد خرید شما خالی است.", color=ft.Colors.GREY)
             )
             self.total_text.value = "0 تومان"
+            self.checkout_btn.disabled = True
             return
 
         for item in self.cart_data["items"]:
@@ -92,8 +97,11 @@ class CartScreen(ft.View):
             )
 
         self.total_text.value = f"{self.cart_data['total_price']} تومان"
+        self.checkout_btn.disabled = False
 
     def change_qty(self, item_id, new_qty):
+        if new_qty < 1:
+            return
         api_client.update_cart_item(item_id, new_qty)
         self.load_cart()
         self.page_ref.update()

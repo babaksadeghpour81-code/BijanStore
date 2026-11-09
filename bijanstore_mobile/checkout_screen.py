@@ -128,41 +128,30 @@ class CheckoutScreen(ft.View):
             self.on_success()
             return
 
-        order = orders[0]  # فعلاً اولین سفارش
+        order = orders[0]
         order_number = order["order_number"]
 
-        def do_pay(e):
+        async def do_pay(e):
             dialog.open = False
             self.page_ref.update()
 
-            # درخواست لینک پرداخت از API
-            import requests
-            from api_client import API_BASE, _headers
-
-            try:
-                r = requests.post(
-                    f"{API_BASE}/orders/{order_number}/pay/",
-                    headers=_headers(),
+            result = api_client.start_payment(order_number)
+            if result and result.get("payment_url"):
+                # ۱. باز کردن مرورگر
+                launcher = ft.UrlLauncher()
+                await launcher.launch_url(
+                    result["payment_url"],
+                    mode=ft.LaunchMode.EXTERNAL_APPLICATION,
                 )
-                if r.status_code == 200:
-                    payment_url = r.json().get("payment_url")
-                    # باز کردن لینک در مرورگر
-                    import webbrowser
-                    webbrowser.open(payment_url)
-                    self.page_ref.snack_bar = ft.SnackBar(
-                        ft.Text("لطفاً پرداخت را در مرورگر تکمیل کنید.")
-                    )
-                    self.page_ref.snack_bar.open = True
-                    self.page_ref.update()
-                else:
-                    self.page_ref.snack_bar = ft.SnackBar(
-                        ft.Text(f"خطا: {r.text}"),
-                        bgcolor=ft.Colors.RED,
-                    )
-                    self.page_ref.snack_bar.open = True
-                    self.page_ref.update()
-            except Exception as ex:
-                print(f"خطا: {ex}")
+                # ۲. بستن فرم و رفتن به سفارش‌ها
+                self.on_success()  # این تابع در main.py به page.navigate("/my-orders") وصل است
+            else:
+                self.page_ref.snack_bar = ft.SnackBar(
+                    ft.Text("خطا در اتصال به درگاه پرداخت."),
+                    bgcolor=ft.Colors.RED,
+                )
+                self.page_ref.snack_bar.open = True
+                self.page_ref.update()
 
         def close_and_go(e):
             dialog.open = False
@@ -187,3 +176,58 @@ class CheckoutScreen(ft.View):
         self.page_ref.overlay.append(dialog)
         dialog.open = True
         self.page_ref.update()
+
+    def show_waiting_dialog(self, order_number):
+        """دیالوگ انتظار برای بازگشت از درگاه"""
+
+        def check_status(e=None):
+            status = api_client.get_order_status(order_number)
+            if not status:
+                return
+
+            if status["status"] == "paid":
+                waiting_dialog.open = False
+                self.page_ref.update()
+                self.page_ref.snack_bar = ft.SnackBar(
+                    ft.Text(f"✅ پرداخت موفق! کد رهگیری: {status.get('payment_ref_id', '')}"),
+                    bgcolor=ft.Colors.GREEN,
+                )
+                self.page_ref.snack_bar.open = True
+                self.page_ref.update()
+                self.on_success()
+            elif status["status"] == "cancelled":
+                waiting_dialog.open = False
+                self.page_ref.update()
+                self.on_success()
+            else:
+                self.page_ref.snack_bar = ft.SnackBar(
+                    ft.Text("پرداخت هنوز تأیید نشده. لطفاً چند لحظه بعد دوباره بررسی کنید."),
+                )
+                self.page_ref.snack_bar.open = True
+                self.page_ref.update()
+
+        def close_manually(e):
+            waiting_dialog.open = False
+            self.page_ref.update()
+            self.on_success()
+
+        waiting_dialog = ft.AlertDialog(
+            title=ft.Text("⏳ در انتظار پرداخت"),
+            content=ft.Column(
+                [
+                    ft.Text("پرداخت را در مرورگر تکمیل کنید."),
+                    ft.Text("بعد از پرداخت، روی «بررسی وضعیت» کلیک کنید.", size=12, color=ft.Colors.GREY),
+                    ft.Text(f"شماره سفارش: {order_number}", size=11, color=ft.Colors.GREY),
+                ],
+                tight=True,
+            ),
+            actions=[
+                ft.TextButton("بستن", on_click=close_manually),
+                ft.Button("🔄 بررسی وضعیت", on_click=check_status),
+            ],
+        )
+
+        self.page_ref.overlay.append(waiting_dialog)
+        waiting_dialog.open = True
+        self.page_ref.update()
+

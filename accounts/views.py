@@ -19,8 +19,8 @@ def register_view(request):
         form = RegisterForm(request.POST)
         if form.is_valid():
             user = form.save(commit=False)
-            # user.is_active = False   # تا تأیید نشه، غیرفعال
-            user.is_active = True  # ← موقتاً True کن
+            user.is_active = False   # تا تأیید نشه، غیرفعال
+            # user.is_active = True  # ← موقتاً True کن
             user.save()
 
             # ساخت توکن تأیید

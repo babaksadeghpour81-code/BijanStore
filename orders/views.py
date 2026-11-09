@@ -16,7 +16,6 @@ from .utils import get_or_create_cart
 from notifications.models import Notification
 
 
-
 def cart_detail(request):
     cart = get_or_create_cart(request)
     items_by_vendor = cart.items_by_vendor()
@@ -84,6 +83,7 @@ def cart_remove(request, item_id):
     messages.info(request, "محصول از سبد خرید حذف شد.")
     return redirect('orders:cart_detail')
 
+
 @login_required
 def checkout(request):
     """صفحه‌ی فرم اطلاعات ارسال"""
@@ -93,7 +93,6 @@ def checkout(request):
         messages.warning(request, "سبد خرید شما خالیه.")
         return redirect('orders:cart_detail')
 
-    # پیش‌فرض‌ها از پروفایل کاربر
     initial = {
         'receiver_name': request.user.get_full_name() or request.user.username,
     }
@@ -101,7 +100,6 @@ def checkout(request):
     if request.method == 'POST':
         form = CheckoutForm(request.POST)
         if form.is_valid():
-            # ذخیره اطلاعات در session و رفتن به صفحه پیش‌فاکتور
             request.session['checkout_data'] = form.cleaned_data
             return redirect('orders:checkout_review')
     else:
@@ -124,8 +122,7 @@ def checkout_review(request):
 
     items_by_vendor = cart.items_by_vendor()
 
-    # اعمال کد تخفیف اگر در session هست
-    coupon_data = request.session.get('coupon_applied', {})  # {vendor_id: coupon_id}
+    coupon_data = request.session.get('coupon_applied', {})
 
     vendor_totals = {}
     vendor_discounts = {}
@@ -143,7 +140,6 @@ def checkout_review(request):
             coupon = Coupon.objects.filter(id=coupon_id, vendor=vendor).first()
             if coupon and coupon.is_valid:
                 discount = coupon.calculate_discount(subtotal)
-                # فقط اگه کاربر قبلاً ازش استفاده نکرده
                 if CouponUsage.objects.filter(coupon=coupon, user=request.user).exists():
                     discount = 0
                 else:
@@ -153,7 +149,6 @@ def checkout_review(request):
 
     grand_total = grand_subtotal - grand_discount
 
-    # لیست کوپن‌های موجود هر فروشنده (برای نمایش در فرم)
     available_coupons = {}
     for vendor in items_by_vendor.keys():
         available_coupons[vendor] = Coupon.objects.filter(vendor=vendor, is_active=True)
@@ -183,7 +178,6 @@ def apply_coupon(request):
         messages.error(request, "کد تخفیف را وارد کنید.")
         return redirect('orders:checkout_review')
 
-    # جستجو در کوپن‌های فروشنده‌هایی که در سبد هستند
     vendor_ids = set(item.product.vendor_id for item in cart.items.all())
     coupon = Coupon.objects.filter(code=code, vendor_id__in=vendor_ids, is_active=True).first()
 
@@ -199,14 +193,12 @@ def apply_coupon(request):
         messages.warning(request, "شما قبلاً از این کد استفاده کرده‌اید.")
         return redirect('orders:checkout_review')
 
-    # اعتبارسنجی حداقل مبلغ برای همون فروشنده
     vendor_items = cart.items.filter(product__vendor=coupon.vendor)
     vendor_subtotal = sum(item.subtotal for item in vendor_items)
     if vendor_subtotal < coupon.min_purchase:
         messages.error(request, f"حداقل مبلغ خرید برای این کد {coupon.min_purchase} تومان است.")
         return redirect('orders:checkout_review')
 
-    # ذخیره در session
     coupon_data = request.session.get('coupon_applied', {})
     coupon_data[str(coupon.vendor_id)] = coupon.id
     request.session['coupon_applied'] = coupon_data
@@ -289,7 +281,6 @@ def place_order(request):
             item.product.stock -= item.quantity
             item.product.save()
 
-        # ثبت استفاده از کوپن
         if applied_coupon:
             CouponUsage.objects.create(
                 coupon=applied_coupon,
@@ -339,9 +330,10 @@ def my_orders(request):
 
 @login_required
 def order_detail(request, order_number):
-    """جزئیات یک سفارش"""
+    """جزئیات یک سفارش برای مشتری"""
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
     return render(request, 'orders/order_detail.html', {'order': order})
+
 
 @login_required
 @require_POST
@@ -349,13 +341,18 @@ def order_delete(request, order_number):
     """حذف سفارش توسط مشتری — فقط در حالت‌های مجاز"""
     order = get_object_or_404(Order, order_number=order_number, user=request.user)
 
-    # فقط pending یا cancelled قابل حذف هستند
     if order.status not in ['pending', 'cancelled']:
         messages.error(request, "فقط سفارش‌های در انتظار پرداخت یا لغو‌شده قابل حذف هستند.")
         return redirect('orders:order_detail', order_number=order.order_number)
 
     with transaction.atomic():
-        # اگر کوپن استفاده شده، آزادش کن
+        # برگرداندن موجودی محصولات
+        for item in order.items.all():
+            if item.product:
+                item.product.stock += item.quantity
+                item.product.save()
+
+        # آزاد کردن کوپن
         if order.coupon:
             CouponUsage.objects.filter(coupon=order.coupon, order=order).delete()
             if order.coupon.used_count > 0:
@@ -367,3 +364,4 @@ def order_delete(request, order_number):
 
     messages.success(request, f"سفارش {order_number_saved} با موفقیت حذف شد.")
     return redirect('orders:my_orders')
+

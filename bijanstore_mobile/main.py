@@ -4,17 +4,25 @@ from state import AppState
 from login_screen import LoginScreen
 from cart_screen import CartScreen
 from checkout_screen import CheckoutScreen
+from my_orders_screen import MyOrdersScreen
+from notifications_screen import NotificationsScreen
+from splash_screen import SplashScreen
 
 def main(page: ft.Page):
     page.title = "BijanStore"
     page.rtl = True
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.theme = ft.Theme(font_family="Vazirmatn")
+    page.theme = ft.Theme(
+        font_family="Vazirmatn",
+        color_scheme_seed=ft.Colors.BLUE,
+    )
+    page.fonts = {
+        "Vazirmatn": "assets/fonts/Vazirmatn-Regular.ttf",
+    }
 
     # --- ۱. تعریف تابع ساخت صفحه اصلی ---
     def build_home_screen():
-        # گرفتن تعداد سبد خرید
-        api_client.get_cart()
+        # محاسبه cart_count از API
         cart_count = 0
         if AppState.is_logged_in():
             try:
@@ -23,6 +31,24 @@ def main(page: ft.Page):
                     cart_count = cart_data.get("total_items", 0)
             except Exception:
                 pass
+
+        # Badge (قابل آپدیت)
+        badge_text = ft.Text(
+            str(cart_count),
+            size=10,
+            color=ft.Colors.WHITE,
+            weight=ft.FontWeight.BOLD,
+        )
+        badge_container = ft.Container(
+            content=badge_text,
+            bgcolor=ft.Colors.RED,
+            border_radius=10,
+            padding=3,
+            top=5,
+            right=5,
+            visible=cart_count > 0,
+        )
+
         products_container = ft.Column(spacing=10)
         search_input = ft.TextField(
             hint_text="جستجوی محصول...",
@@ -50,29 +76,57 @@ def main(page: ft.Page):
                 )
 
             for p in products:
+                image_url = p.get("main_image")
+                stock = p.get("stock", 0)
+                is_available = stock > 0
+
+                info_column = ft.Column(
+                    [
+                        ft.Text(p["name"], weight=ft.FontWeight.BOLD, size=15),
+                        ft.Text(f"{p['price']} تومان", color=ft.Colors.RED),
+                        ft.Text(
+                            f"فروشنده: {p['vendor']['name']}",
+                            size=11,
+                            color=ft.Colors.GREY,
+                        ),
+                        ft.Text(
+                            f"✅ موجود ({stock} عدد)" if is_available else "❌ ناموجود",
+                            size=11,
+                            color=ft.Colors.GREEN if is_available else ft.Colors.RED,
+                            weight=ft.FontWeight.BOLD,
+                        ),
+                    ],
+                    expand=True,
+                )
+
+                add_btn = ft.IconButton(
+                    ft.Icons.ADD_SHOPPING_CART,
+                    icon_color=ft.Colors.BLUE if is_available else ft.Colors.GREY,
+                    disabled=not is_available,
+                    on_click=lambda e, pid=p["id"]: add_product(pid),
+                )
+
                 products_container.controls.append(
                     ft.Card(
                         content=ft.Container(
                             content=ft.Row(
                                 [
-                                    ft.Column(
-                                        [
-                                            ft.Text(p["name"], weight=ft.FontWeight.BOLD, size=15),
-                                            ft.Text(f"{p['price']} تومان", color=ft.Colors.RED),
-                                            ft.Text(
-                                                f"فروشنده: {p['vendor']['name']}",
-                                                size=11,
-                                                color=ft.Colors.GREY,
-                                            ),
-                                        ],
-                                        expand=True,
+                                    ft.Container(
+                                        content=ft.Image(
+                                            src=image_url,
+                                            width=80,
+                                            height=80,
+                                            fit=ft.BoxFit.COVER,
+                                            border_radius=8,
+                                        ) if image_url else ft.Icon(
+                                            ft.Icons.IMAGE_NOT_SUPPORTED, size=60, color=ft.Colors.GREY
+                                        ),
+                                        width=80,
+                                        height=80,
                                     ),
-                                    ft.IconButton(
-                                        ft.Icons.ADD_SHOPPING_CART,
-                                        icon_color=ft.Colors.BLUE,
-                                        on_click=lambda e, pid=p["id"]: add_product(pid),
-                                    ),
-                                ]
+                                    info_column,
+                                    add_btn,
+                                ],
                             ),
                             padding=12,
                         )
@@ -81,16 +135,20 @@ def main(page: ft.Page):
             page.update()
 
         def add_product(product_id):
+            nonlocal cart_count
             if not AppState.is_logged_in():
                 page.navigate("/login")
                 return
             api_client.add_to_cart(product_id, 1)
             page.snack_bar = ft.SnackBar(ft.Text("به سبد خرید اضافه شد"))
             page.snack_bar.open = True
-            page.update()
-            page.navigate("/")
 
-        # بارگذاری اولیه
+            # آپدیت Badge
+            cart_count += 1
+            badge_text.value = str(cart_count)
+            badge_container.visible = True
+            page.update()
+
         load_products()
 
         return ft.View(
@@ -100,24 +158,27 @@ def main(page: ft.Page):
                 bgcolor=ft.Colors.BLUE_700,
                 color=ft.Colors.WHITE,
                 actions=[
-                    # سبد خرید
-                    ft.IconButton(
-                        ft.Icons.SHOPPING_CART,
-                        on_click=lambda e: page.navigate("/cart"),
+                    ft.Container(
+                        content=ft.Stack(
+                            [
+                                ft.IconButton(
+                                    ft.Icons.SHOPPING_CART,
+                                    on_click=lambda e: page.navigate("/cart"),
+                                ),
+                                badge_container,  # ← Badge قابل آپدیت
+                            ]
+                        ),
                     ),
-                    # سفارش‌های من (فقط اگر لاگین باشه)
                     ft.IconButton(
                         ft.Icons.RECEIPT_LONG,
                         on_click=lambda e: page.navigate("/my-orders") if AppState.is_logged_in() else page.navigate(
                             "/login"),
                     ),
-                    # اعلان‌ها (فقط اگر لاگین باشه)
                     ft.IconButton(
                         ft.Icons.NOTIFICATIONS,
                         on_click=lambda e: page.navigate(
                             "/notifications") if AppState.is_logged_in() else page.navigate("/login"),
                     ),
-                    # کاربر
                     ft.IconButton(
                         ft.Icons.LOGIN if not AppState.is_logged_in() else ft.Icons.PERSON,
                         on_click=lambda e: page.navigate("/login") if not AppState.is_logged_in() else page.navigate(
@@ -188,7 +249,9 @@ def main(page: ft.Page):
         page.views.clear()
         route = page.route
 
-        if route == "/login":
+        if route == "/splash":
+            page.views.append(SplashScreen(page, on_complete=lambda: page.navigate("/")))
+        elif route == "/login":
             page.views.append(
                 LoginScreen(
                     page,
@@ -217,9 +280,23 @@ def main(page: ft.Page):
             page.views.append(
                 CheckoutScreen(
                     page,
-                    on_success=lambda: page.navigate("/"),
+                    on_success=lambda: page.navigate("/my-orders"),
                 )
             )
+        elif route == "/my-orders":
+            if not AppState.is_logged_in():
+                page.navigate("/login")
+                return
+            my_orders = MyOrdersScreen(page)
+            page.views.append(my_orders)
+            my_orders.load_orders()
+        elif route == "/notifications":
+            if not AppState.is_logged_in():
+                page.navigate("/login")
+                return
+            notif_screen = NotificationsScreen(page)
+            page.views.append(notif_screen)
+            notif_screen.load_notifications()
         else:
             page.views.append(build_home_screen())
 
@@ -227,7 +304,8 @@ def main(page: ft.Page):
 
     # --- ۳. اتصال و شروع ---
     page.on_route_change = route_change
-    route_change()  # فراخوانی مستقیم برای صفحه اول
+    page.navigate("/splash")
 
 
 ft.run(main)
+
