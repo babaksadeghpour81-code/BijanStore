@@ -1,4 +1,5 @@
 import flet as ft
+import asyncio
 
 
 class SplashScreen(ft.View):
@@ -26,7 +27,7 @@ class SplashScreen(ft.View):
                             ft.Text(
                                 "فروشگاه آنلاین چندفروشندگی",
                                 size=14,
-                                color=ft.Colors.WHITE70,
+                                color=ft.Colors.WHITE_70,
                             ),
                             ft.ProgressRing(
                                 width=30,
@@ -44,7 +45,10 @@ class SplashScreen(ft.View):
             ],
         )
 
-        # بعد از ۲ ثانیه، به صفحه اصلی برو
-        import threading
-        threading.Timer(2.0, lambda: self.page_ref.navigate("/")).start()
+        # ✅ به جای threading.Timer از asyncio استفاده کن
+        self.page_ref.run_task(self._navigate_after_delay)
 
+    async def _navigate_after_delay(self):
+        """بعد از ۲ ثانیه به صفحه اصلی برو"""
+        await asyncio.sleep(2.0)
+        await self.page_ref.push_route("/")
