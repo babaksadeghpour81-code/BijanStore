@@ -47,5 +47,4 @@ icon = "assets/images/logo.png"
 # macOS tile and the Android background layer. Defaults to white.
 # icon_background = "#ffffff"
 
-[tool.flet.app]
 path = "src"
